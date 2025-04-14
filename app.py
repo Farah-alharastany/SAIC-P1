@@ -2,35 +2,35 @@ from flask import Flask, request, jsonify, render_template
 from keras.models import load_model
 from PIL import Image
 import numpy as np
-import io
-import requests
-from onedrivedownloader import download  # إضافة مكتبة تحميل ملفات OneDrive
 import os
+from onedrivedownloader import download  # مكتبة تحميل من OneDrive
 
-# Force TensorFlow to use only CPU
+# استخدم CPU فقط
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 app = Flask(__name__)
 
-# OneDrive URL to your model file
+# رابط النموذج في OneDrive (تأكد أنه عام)
 model_url = "https://1drv.ms/u/c/3a7e9e95600e8051/EURViyY9BN1AllEiR1BAcAgBKwOmJMHVtG_d8yrlybw5Rw?e=VR6sRu"
+model_path = "VGG16_model.h5"  # اسم الملف بعد التحميل
 
-# Download the model from OneDrive using onedrivedownloader
-def download_model(url):
-    try:
-        download(url, filename='VGG16_model.h5')
-        print("Model downloaded successfully")
-    except Exception as e:
-        print("Failed to download model:", e)
-        raise Exception("Failed to download model")
+# تحميل النموذج إذا لم يكن موجودًا
+def download_model(url, filename):
+    if not os.path.exists(filename):
+        try:
+            download(url, filename=filename)
+            print("✅ Model downloaded successfully.")
+        except Exception as e:
+            print("❌ Failed to download model:", e)
+            raise
 
-# Download the model on startup
-download_model(model_url)
+# تحميل النموذج عند تشغيل التطبيق
+download_model(model_url, model_path)
 
-# Load the model after download
-model = load_model(r'C:\Users\shaha\OneDrive\Desktop\Codeing Project by myself\SAIC\FirstProject\NewUI\VGG16_model.h5')
+# تحميل النموذج المدرب
+model = load_model(model_path)
 
-# Adjust these to match your model input
+# إعدادات الصورة
 IMG_SIZE = (224, 224)
 
 def preprocess_image(image):
@@ -38,10 +38,12 @@ def preprocess_image(image):
     image_array = np.array(image) / 255.0
     return np.expand_dims(image_array, axis=0)
 
+# الصفحة الرئيسية
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# نقطة التنبؤ
 @app.route('/predict', methods=['POST'])
 def predict():
     if 'image' not in request.files:
@@ -53,14 +55,17 @@ def predict():
     prediction = model.predict(img_tensor)
     predicted_class_index = np.argmax(prediction[0])
     
-    # Use the class_names list you provided
-    class_names = ['Central Serous Chorioretinopathy', 'Diabetic Retinopathy', 'Disc Edema',
-                   'Glaucoma', 'Healthy', 'Macular Scar', 'Myopia', 'Pterygium',
-                   'Retinal Detachment', 'Retinitis Pigmentosa']
+    # أسماء الفئات
+    class_names = [
+        'Central Serous Chorioretinopathy', 'Diabetic Retinopathy', 'Disc Edema',
+        'Glaucoma', 'Healthy', 'Macular Scar', 'Myopia', 'Pterygium',
+        'Retinal Detachment', 'Retinitis Pigmentosa'
+    ]
     
     predicted_class = class_names[predicted_class_index]
     
     return jsonify({'prediction': predicted_class})
-    
+
+# تشغيل التطبيق
 if __name__ == '__main__':
     app.run(debug=True)
