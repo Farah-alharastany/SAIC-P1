@@ -53,4 +53,5 @@ def predict():
 
 # تشغيل التطبيق
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))  # خذ البورت من البيئة أو استخدم 10000 كافتراضي
+    app.run(host='0.0.0.0', port=port)
