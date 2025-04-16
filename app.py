@@ -21,14 +21,18 @@ print("[INFO] Model loaded successfully.")
 IMG_SIZE = (224, 224)
 
 def preprocess_image(image):
-    print("[INFO] Preprocessing image...")
-    image = image.resize(IMG_SIZE).convert('RGB')
-    print("[DEBUG] Image resized and converted to RGB.")
-    image_array = np.array(image) / 255.0
-    print(f"[DEBUG] Image array shape after normalization: {image_array.shape}")
-    image_tensor = np.expand_dims(image_array, axis=0)
-    print(f"[DEBUG] Final tensor shape (with batch dimension): {image_tensor.shape}")
-    return image_tensor
+    try:
+        print("[INFO] Preprocessing image...")
+        image = image.resize(IMG_SIZE).convert('RGB')
+        print("[DEBUG] Image resized and converted to RGB.")
+        image_array = np.array(image) / 255.0
+        print(f"[DEBUG] Image array shape after normalization: {image_array.shape}")
+        image_tensor = np.expand_dims(image_array, axis=0)
+        print(f"[DEBUG] Final tensor shape (with batch dimension): {image_tensor.shape}")
+        return image_tensor
+    except Exception as e:
+        print(f"[ERROR] Error during preprocessing: {str(e)}")
+        raise
 
 # الصفحة الرئيسية
 @app.route('/')
@@ -38,34 +42,42 @@ def index():
 # نقطة التنبؤ
 @app.route('/predict', methods=['POST'])
 def predict():
+    print("[INFO] Received request for prediction.")
+    
     if 'image' not in request.files:
         print("[ERROR] No image found in request.")
         return jsonify({'error': 'No image uploaded'})
 
-    print("[INFO] Image received.")
-    file = request.files['image']
-    img = Image.open(file.stream)
-    print("[INFO] Image opened successfully.")
+    try:
+        file = request.files['image']
+        print(f"[INFO] Image file received: {file.filename}")
 
-    img_tensor = preprocess_image(img)
+        img = Image.open(file.stream)
+        print("[INFO] Image opened successfully.")
 
-    print("[INFO] Making prediction...")
-    prediction = model.predict(img_tensor)
-    print(f"[DEBUG] Raw prediction output: {prediction}")
+        img_tensor = preprocess_image(img)
 
-    predicted_class_index = np.argmax(prediction[0])
-    print(f"[INFO] Predicted class index: {predicted_class_index}")
+        print("[INFO] Making prediction...")
+        prediction = model.predict(img_tensor)
+        print(f"[DEBUG] Raw prediction output: {prediction}")
 
-    class_names = [
-        'Central Serous Chorioretinopathy', 'Diabetic Retinopathy', 'Disc Edema',
-        'Glaucoma', 'Healthy', 'Macular Scar', 'Myopia', 'Pterygium',
-        'Retinal Detachment', 'Retinitis Pigmentosa'
-    ]
+        predicted_class_index = np.argmax(prediction[0])
+        print(f"[INFO] Predicted class index: {predicted_class_index}")
 
-    predicted_class = class_names[predicted_class_index]
-    print(f"[INFO] Final predicted class: {predicted_class}")
+        class_names = [
+            'Central Serous Chorioretinopathy', 'Diabetic Retinopathy', 'Disc Edema',
+            'Glaucoma', 'Healthy', 'Macular Scar', 'Myopia', 'Pterygium',
+            'Retinal Detachment', 'Retinitis Pigmentosa'
+        ]
 
-    return jsonify({'prediction': predicted_class})
+        predicted_class = class_names[predicted_class_index]
+        print(f"[INFO] Final predicted class: {predicted_class}")
+
+        return jsonify({'prediction': predicted_class})
+    
+    except Exception as e:
+        print(f"[ERROR] Exception during prediction: {str(e)}")
+        return jsonify({'error': 'Prediction failed', 'details': str(e)})
 
 # تشغيل التطبيق
 if __name__ == '__main__':
