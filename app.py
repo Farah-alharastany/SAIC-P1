@@ -3,29 +3,14 @@ from keras.models import load_model
 from PIL import Image
 import numpy as np
 import os
-from onedrivedownloader import download  # مكتبة تحميل من OneDrive
 
 # استخدم CPU فقط
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 app = Flask(__name__)
 
-# رابط النموذج في OneDrive (تأكد أنه عام)
-model_url = "https://1drv.ms/u/c/3a7e9e95600e8051/EURViyY9BN1AllEiR1BAcAgBKwOmJMHVtG_d8yrlybw5Rw?e=VR6sRu"
-model_path = "VGG16_model.h5"  # اسم الملف بعد التحميل
-
-# تحميل النموذج إذا لم يكن موجودًا
-def download_model(url, filename):
-    if not os.path.exists(filename):
-        try:
-            download(url, filename=filename)
-            print("✅ Model downloaded successfully.")
-        except Exception as e:
-            print("❌ Failed to download model:", e)
-            raise
-
-# تحميل النموذج عند تشغيل التطبيق
-download_model(model_url, model_path)
+# المسار إلى النموذج بعد رفعه عبر Git LFS
+model_path = "VGG16_model.h5"  # تأكد أن النموذج في نفس المجلد الذي يحتوي على ملف app.py
 
 # تحميل النموذج المدرب
 model = load_model(model_path)
@@ -68,4 +53,5 @@ def predict():
 
 # تشغيل التطبيق
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))  # خذ البورت من البيئة أو استخدم 10000 كافتراضي
+    app.run(host='0.0.0.0', port=port)
