@@ -10,7 +10,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 app = Flask(__name__)
 
 # المسار إلى النموذج بعد رفعه عبر Git LFS
-model_path = "VGG16_model.h5"  # تأكد أن النموذج في نفس المجلد الذي يحتوي على ملف app.py
+model_path = "EYE_disease_model.h5"  # تأكد أن النموذج في نفس المجلد الذي يحتوي على ملف app.py
 
 # تحميل النموذج المدرب
 model = load_model(model_path)
